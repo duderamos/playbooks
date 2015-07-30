@@ -1,0 +1,18 @@
+driver = mysql
+
+connect = host={{ sql_server_host }} dbname={{ sql_server_dbname }} user={{ sql_server_user }} password={{ sql_server_password }}
+
+default_pass_scheme = MD5
+
+user_query = \
+  SELECT concat('*:bytes=', quota) AS quota_rule, \
+    '/mailstore/%d/%u/' AS home, \
+    concat(format, ':/mailstore/%d/%u/mail/' as mail \
+  FROM mailbox WHERE username = '%u' AND domain = '%d'
+
+password_query = \
+  SELECT username AS user, password \
+  FROM mailbox WHERE username = '%u'
+
+# Query to get a list of all usernames.
+iterate_query = SELECT username AS user FROM mailbox

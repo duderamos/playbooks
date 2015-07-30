@@ -1,0 +1,104 @@
+---
+
+- name: Set hostname
+  hostname: name={{ hostname }}
+
+- name: Install packages
+  yum: name={{ item }} state=installed
+  with_items:
+    - dovecot
+    - dovecot-mysql
+
+- name: Copy dovecot conf templates
+  template: src={{ item }} dest=/etc/dovecot/ owner=root group=root
+  with_items:
+    - dovecot.conf
+    - dovecot-sql.conf.ext
+  notify:
+    - Reload dovecot
+
+- name: Copy dovecot conf.d
+  copy: src={{ item }} dest=/etc/dovecot/conf.d/ owner=root group=root
+  with_items:
+    - auth-sql.conf.ext
+    - 10-auth.conf
+    - 10-logging.conf
+    - 10-mail.conf
+    - 10-ssl.conf
+    - 15-mailboxes.conf
+    - 20-imap.conf
+    - 20-lmtp.conf
+    - 90-plugin.conf
+    - 90-quota.conf
+    - 90-stats.conf
+  notify:
+    - Reload dovecot
+
+- name: Copy dovecot conf.d templates
+  template: src={{ item }} dest=/etc/dovecot/conf.d/ owner=root group=root
+  with_items:
+    - 10-master.conf
+    - 15-lda.conf
+    - 90-replication.conf
+  notify:
+    - Reload dovecot
+    
+- name: Copy 20-dovecot-nproc.conf
+  copy: src=20-dovecot-nproc.conf dest=/etc/security/limits.d/
+
+- name: Create vmail group
+  group: name=vmail gid=227 state=present
+
+- name: Create vmail user
+  user: name=vmail group=vmail state=present uid=227 
+
+- name: Create vmail/.ssh
+  file: path=/home/vmail/.ssh owner=vmail group=vmail mode=0700 state=directory 
+
+- name: Copy ssh conf
+  copy: src={{ item }} dest=/home/vmail/.ssh owner=vmail group=vmail mode=0640 
+  with_items:
+    - authorized_keys
+    - config
+    - known_hosts
+
+- name: Set ssh conf permissions
+  file: dest=/home/vmail/.ssh/{{ item }} owner=vmail group=vmail mode=0600
+  with_items:
+    - authorized_keys
+    - known_hosts
+
+- name: Copy vmail private key
+  copy: src=id_rsa dest=/etc/dovecot owner=vmail group=vmail mode=0400 
+
+- name: Configure firewalld
+  firewalld: permanent=true port={{ item }} state=enabled
+  with_items:
+    - 143/tcp
+    - 993/tcp
+    - 24/tcp
+    - 24245/tcp
+
+- name: Create mailstore
+  lvol: vg=centos lv=mailstore size=100%FREE
+
+- name: Format mailstore
+  filesystem: fstype=xfs dev=/dev/centos/mailstore opts="-L mailstore"
+
+- name: Add mailstore to fstab
+  lineinfile: dest=/etc/fstab line="LABEL=mailstore /mailstore xfs defaults 0 0"
+
+- name: Create mailstore mountpoint
+  file: path=/mailstore state=directory mode=0750 owner=vmail group=vmail
+
+- name: Mount mailstore
+  mount: name=/mailstore state=mounted fstype=xfs src='LABEL=mailstore' 
+
+- name: Change mailstore owner
+  file: path=/mailstore owner=vmail group=vmail mode=0750 state=directory
+
+- name: Enable dovecot
+  service: name=dovecot enabled=yes state=restarted
+
+- name: Restart firewalld
+  service: name=firewalld state=restarted

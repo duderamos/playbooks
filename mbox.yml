@@ -1,0 +1,7 @@
+---
+- name: Configure mail servers
+  hosts: mbox
+  remote_user: eduardo
+  sudo: yes
+  roles:
+    - mbox

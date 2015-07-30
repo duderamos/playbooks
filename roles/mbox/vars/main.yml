@@ -1,0 +1,9 @@
+---
+proxy_servers: imap.example.com
+mail_servers: mbox.example.com
+internal_net: 172.16.34.0/24
+trusted: 172.16.34.93,172.16.34.94
+sql_server_host: db01.example.com
+sql_server_dbname: dovecot
+sql_server_user: dovecot
+sql_server_password: $3cre7

@@ -1,0 +1,8 @@
+---
+
+- name: Restore dovecot SELinux
+  command: restorecon -R /etc/dovecot
+
+- name: Reload dovecot
+  service: name=dovecot state=reloaded
+
