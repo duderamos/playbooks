@@ -1,0 +1,19 @@
+driver = mysql
+
+connect = host={{ sql_server_host }} dbname={{ sql_server_dbname }} user={{ sql_server_user }} password={{ sql_server_password }}
+
+default_pass_scheme = MD5
+
+#user_query = \
+#  SELECT concat('*:bytes=', quota) AS userdb_quota_rule, \
+#    concat('/mailstore/', domain, '/', username) AS home \
+#  FROM mailbox WHERE username = '%u' AND domain = '%d'
+
+
+password_query = \
+  SELECT username AS user, NULL AS password, 'Y' AS nopassword, \
+    'Y' as proxy_maybe, \
+    'any-cert' AS starttls \
+  FROM mailbox WHERE username = '%u'
+
+iterate_query = SELECT username AS user FROM mailbox

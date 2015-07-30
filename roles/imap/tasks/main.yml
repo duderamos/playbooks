@@ -1,0 +1,76 @@
+---
+
+- name: Set hostname
+  hostname: name={{ hostname }}
+
+- name: Install packages
+  yum: name={{ item }} state=installed
+  with_items:
+    - dovecot
+    - dovecot-mysql
+    - bash-completion
+
+- name: Copy 20-dovecot-nproc.conf
+  copy: src=20-dovecot-nproc.conf dest=/etc/security/limits.d/
+  notify:
+    - Reload dovecot
+
+- name: Copy dovecot conf
+  copy: src={{ item }} dest=/etc/dovecot/ owner=root group=root
+  with_items:
+    - dovecot.conf
+  notify:
+    - Reload dovecot
+
+- name: Copy dovecot conf templates
+  template: src={{ item }} dest=/etc/dovecot/ owner=root group=root
+  with_items:
+    - dovecot-dict-sql.conf.ext
+    - dovecot-sql.conf.ext
+
+- name: Copy dovecot-conf.d
+  copy: src={{ item }} dest=/etc/dovecot/conf.d/ owner=root group=root
+  with_items:
+    - auth-sql.conf.ext
+    - 10-auth.conf
+    - 10-logging.conf
+    - 10-mail.conf
+    - 10-ssl.conf
+    - 15-mailboxes.conf
+    - 20-imap.conf
+    - 20-lmtp.conf
+    - 90-plugin.conf
+    - 90-quota.conf
+    - 90-stats.conf
+  notify:
+    - Reload dovecot
+
+- name: Copy dovecot conf.d templates
+  template: src={{ item }} dest=/etc/dovecot/conf.d/ owner=root group=root
+  with_items:
+    - 15-lda.conf
+    - 10-director.conf
+    - 10-master.conf
+  notify:
+    - Reload dovecot
+
+- name: Create vmail group
+  group: name=vmail gid=227 state=present
+
+- name: Create vmail user
+  user: name=vmail group=vmail state=present uid=227
+
+- name: Configure firewall
+  firewalld: permanent=true port={{ item }} state=enabled
+  with_items:
+    - 143/tcp
+    - 993/tcp
+    - 24/tcp
+    - 24245/tcp
+    - 9090/tcp
+
+- name: Enable dovecot
+  service: name=dovecot enabled=yes state=restarted
+
+- name: Restart firewalld
+  service: name=firewalld state=restarted

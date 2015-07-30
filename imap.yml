@@ -1,0 +1,7 @@
+---
+- name: Configure mail proxy servers
+  hosts: imap
+  remote_user: support
+  sudo: yes
+  roles:
+    - imap
