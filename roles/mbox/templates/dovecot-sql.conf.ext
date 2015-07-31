@@ -7,7 +7,7 @@ default_pass_scheme = MD5
 user_query = \
   SELECT concat('*:bytes=', quota) AS quota_rule, \
     '/mailstore/%d/%u/' AS home, \
-    concat(format, ':/mailstore/%d/%u/mail/' as mail \
+    concat(format, ':/mailstore/%d/%u/mail/') as mail \
   FROM mailbox WHERE username = '%u' AND domain = '%d'
 
 password_query = \
